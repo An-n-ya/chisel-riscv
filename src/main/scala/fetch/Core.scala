@@ -20,21 +20,28 @@ class Core extends Module {
   io.imem.addr := pc_reg
   val inst = io.imem.inst
 
+  // ID
   val rs1_addr = inst(19,15)
   val rs2_addr = inst(24,20)
   val wb_addr = inst(11,7)
   val imm_i = inst(31,20)
   val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
-
+  val imm_s = Cat(inst(31,25), inst(11,7))
+  val imm_s_sext = Cat(Fill(20, imm_s(11)), imm_s)
   val rs1_data = Mux((rs1_addr =/= 0.U(WORD_LEN.W)), regfile(rs1_addr), 0.U(WORD_LEN.W))
   val rs2_data = Mux((rs2_addr =/= 0.U(WORD_LEN.W)), regfile(rs2_addr), 0.U(WORD_LEN.W))
 
 
+  // EX
   val alu_out = MuxCase(0.U(WORD_LEN.W), Seq(
-    (inst === LW) -> (rs1_data + imm_i_sext)
+    (inst === LW) -> (rs1_data + imm_i_sext),
+      (inst === SW) -> (rs1_data + imm_s_sext)
   ))
 
+  // MEM
   io.dmem.addr := alu_out
+  io.dmem.wen := (inst === SW)
+  io.dmem.wdata := rs2_data
 
   val wb_data = io.dmem.rdata
   when(inst === LW) {
@@ -50,6 +57,8 @@ class Core extends Module {
   printf(p"wb_addr: 0x${Hexadecimal(wb_addr)}\n")
   printf(p"wb_data: 0x${Hexadecimal(wb_data)}\n")
   printf(p"dmem.addr: ${io.dmem.addr}\n")
+  printf(p"dmem.wen: ${io.dmem.wen}\n")
+  printf(p"dmem.wdata: 0x${Hexadecimal(io.dmem.wdata)}\n")
   printf("------------\n")
 
 

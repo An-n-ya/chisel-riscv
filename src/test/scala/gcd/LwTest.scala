@@ -1,11 +1,10 @@
 package fetch
 
-import org.scalatest._
 import chiseltest._
 import org.scalatest.flatspec.AnyFlatSpec
 
-class FetchTest extends AnyFlatSpec with ChiselScalatestTester {
-  "mycpu" should "work through hex" in {
+class LwTest extends AnyFlatSpec with ChiselScalatestTester {
+  "mycpu" should "work in lw" in {
     test(new Top) {
       c => {
         c.clock.setTimeout(10)

@@ -6,6 +6,7 @@ import chisel3.util._
 object Consts {
   val WORD_LEN = 32
   val START_ADDR = 0.U(WORD_LEN.W)
+  val CSR_ADDR_LEN = 12
 
   val EXE_FUN_LEN = 5
   val ALU_X       =  0.U(EXE_FUN_LEN.W)
@@ -65,5 +66,13 @@ object Consts {
   val WB_MEM_V   = 4.U(WB_SEL_LEN.W)
   val WB_ALU_V   = 5.U(WB_SEL_LEN.W)
   val WB_VL      = 6.U(WB_SEL_LEN.W)
+
+  val CSR_LEN = 3
+  val CSR_X   = 0.U(CSR_LEN.W)
+  val CSR_W   = 1.U(CSR_LEN.W)
+  val CSR_S   = 2.U(CSR_LEN.W)
+  val CSR_C   = 3.U(CSR_LEN.W)
+  val CSR_E   = 4.U(CSR_LEN.W)
+  val CSR_V   = 5.U(CSR_LEN.W)
 }
 

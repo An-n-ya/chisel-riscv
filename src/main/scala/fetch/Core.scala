@@ -10,12 +10,14 @@ class Core extends Module {
     val imem = Flipped(new ImemPortIo())
     val dmem = Flipped(new DmemPortIo())
     val exit = Output(Bool())
+    val gp = Output(UInt(WORD_LEN.W))
   })
 
   val regfile = Mem(32, UInt(WORD_LEN.W))
   val csr_regfile = Mem(4096, UInt(WORD_LEN.W))
 
   val pc_reg = RegInit(START_ADDR)
+  io.gp := regfile(3)
 
   // IF
   val inst = io.imem.inst
@@ -42,14 +44,14 @@ class Core extends Module {
   val imm_i_sext = Cat(Fill(20, imm_i(11)), imm_i)
   val imm_s = Cat(inst(31,25), inst(11,7))
   val imm_s_sext = Cat(Fill(20, imm_s(11)), imm_s)
-  val imm_b = Cat(inst(31,25), inst(7), inst(30,25), inst(11,8))
+  val imm_b = Cat(inst(31), inst(7), inst(30,25), inst(11,8))
   val imm_b_sext = Cat(Fill(19, imm_b(11)), imm_b, 0.U(1.U))
   val imm_j = Cat(inst(31), inst(19,12), inst(20), inst(30,21))
-  val imm_j_sext = Cat(Fill(19, imm_j(11)), imm_j, 0.U(1.U))
+  val imm_j_sext = Cat(Fill(11, imm_j(19)), imm_j, 0.U(1.U))
   val imm_u = inst(31,12)
   val imm_u_shifted = Cat(imm_u, Fill(12, 0.U))
   val imm_z = inst(19,15)
-  val imm_z_shifted = Cat(Fill(27, 0.U), imm_z)
+  val imm_z_uext = Cat(Fill(27, 0.U), imm_z)
   val rs1_data = Mux((rs1_addr =/= 0.U(WORD_LEN.W)), regfile(rs1_addr), 0.U(WORD_LEN.W))
   val rs2_data = Mux((rs2_addr =/= 0.U(WORD_LEN.W)), regfile(rs2_addr), 0.U(WORD_LEN.W))
 
@@ -86,12 +88,12 @@ class Core extends Module {
       JALR -> List(ALU_JALR, OP1_RS1, OP2_IMI, MEN_X, REN_S, WB_PC, CSR_X),
       LUI -> List(ALU_ADD, OP1_X, OP2_IMU, MEN_X, REN_S, WB_ALU, CSR_X),
       AUIPC -> List(ALU_ADD, OP1_PC, OP2_IMU, MEN_X, REN_S, WB_ALU, CSR_X),
-      CSRRW -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_ALU, CSR_W),
-      CSRRWI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_ALU, CSR_W),
-      CSRRS -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_ALU, CSR_S),
-      CSRRSI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_ALU, CSR_S),
-      CSRRC -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_ALU, CSR_C),
-      CSRRCI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_ALU, CSR_C),
+      CSRRW -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_W),
+      CSRRWI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_W),
+      CSRRS -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_S),
+      CSRRSI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_S),
+      CSRRC -> List(ALU_COPY1, OP1_RS1, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
+      CSRRCI -> List(ALU_COPY1, OP1_IMZ, OP2_X, MEN_X, REN_S, WB_CSR, CSR_C),
       ECALL -> List(ALU_X, OP1_X, OP2_X, MEN_X, REN_X, WB_X, CSR_E),
     )
   )
@@ -150,6 +152,7 @@ class Core extends Module {
   ))
   when(csr_cmd > 0.U) {
     csr_regfile(csr_addr) := csr_wdata
+    printf(p"write csr addr: 0x${Hexadecimal(csr_addr)}, data: 0x${Hexadecimal(csr_wdata)}\n")
   }
 
   // WB
@@ -164,18 +167,21 @@ class Core extends Module {
 
   printf(p"pc_reg: 0x${Hexadecimal(pc_reg)}\n")
   printf(p"instruction: 0x${Hexadecimal(inst)}\n")
-  printf(p"rs1_addr: 0x${Hexadecimal(rs1_addr)}\n")
-  printf(p"rs2_addr: 0x${Hexadecimal(rs2_addr)}\n")
-  printf(p"rs1_data: 0x${Hexadecimal(rs1_data)}\n")
-  printf(p"rs2_data: 0x${Hexadecimal(rs2_data)}\n")
-  printf(p"wb_addr: 0x${Hexadecimal(wb_addr)}\n")
-  printf(p"wb_data: 0x${Hexadecimal(wb_data)}\n")
-  printf(p"dmem.addr: ${io.dmem.addr}\n")
-  printf(p"dmem.wen: ${io.dmem.wen}\n")
-  printf(p"dmem.wdata: 0x${Hexadecimal(io.dmem.wdata)}\n")
+  printf(p"br_flg: ${br_flg}\n")
+  printf(p"br_target: 0x${Hexadecimal(br_target)}\n")
+//  printf(p"rs1_addr: 0x${Hexadecimal(rs1_addr)}\n")
+//  printf(p"rs2_addr: 0x${Hexadecimal(rs2_addr)}\n")
+//  printf(p"rs1_data: 0x${Hexadecimal(rs1_data)}\n")
+//  printf(p"rs2_data: 0x${Hexadecimal(rs2_data)}\n")
+//  printf(p"wb_addr: 0x${Hexadecimal(wb_addr)}\n")
+//  printf(p"wb_data: 0x${Hexadecimal(wb_data)}\n")
+//  printf(p"dmem.addr: ${io.dmem.addr}\n")
+//  printf(p"dmem.wen: ${io.dmem.wen}\n")
+//  printf(p"dmem.wdata: 0x${Hexadecimal(io.dmem.wdata)}\n")
+  printf(p"gp: ${regfile(3)}\n")
   printf("------------\n")
 
 
 
-  io.exit := (inst === 0x22222222.U(WORD_LEN.W))
+  io.exit := (pc_reg === 0x4c.U(WORD_LEN.W))
 }

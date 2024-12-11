@@ -17,31 +17,34 @@ class DmemPortIo extends Bundle {
 }
 
 class Memory extends Module {
-  val io = IO(new Bundle{
+  val io = IO(new Bundle {
     val imem = new ImemPortIo()
     val dmem = new DmemPortIo()
   })
 
   val mem = Mem(16384, UInt(8.W))
 
-  loadMemoryFromFileInline(mem, "/home/annya/src/riscv-tests/isa/rv32ui-p-add.hex")
+  loadMemoryFromFileInline(
+    mem,
+    "/home/annya/src/riscv-tests/target/share/riscv-tests/isa/hex/rv32mi-p-sw.hex"
+  )
 
   io.imem.inst := Cat(
     mem(io.imem.addr + 3.U(WORD_LEN.W)),
     mem(io.imem.addr + 2.U(WORD_LEN.W)),
     mem(io.imem.addr + 1.U(WORD_LEN.W)),
-    mem(io.imem.addr),
+    mem(io.imem.addr)
   )
   io.dmem.rdata := Cat(
     mem(io.dmem.addr + 3.U(WORD_LEN.W)),
     mem(io.dmem.addr + 2.U(WORD_LEN.W)),
     mem(io.dmem.addr + 1.U(WORD_LEN.W)),
-    mem(io.dmem.addr),
+    mem(io.dmem.addr)
   )
   when(io.dmem.wen) {
-    mem(io.dmem.addr) := io.dmem.wdata(7,0)
-    mem(io.dmem.addr + 1.U(WORD_LEN.W)) := io.dmem.wdata(15,8)
-    mem(io.dmem.addr + 2.U(WORD_LEN.W)) := io.dmem.wdata(23,16)
-    mem(io.dmem.addr + 3.U(WORD_LEN.W)) := io.dmem.wdata(31,24)
+    mem(io.dmem.addr) := io.dmem.wdata(7, 0)
+    mem(io.dmem.addr + 1.U(WORD_LEN.W)) := io.dmem.wdata(15, 8)
+    mem(io.dmem.addr + 2.U(WORD_LEN.W)) := io.dmem.wdata(23, 16)
+    mem(io.dmem.addr + 3.U(WORD_LEN.W)) := io.dmem.wdata(31, 24)
   }
 }

@@ -213,5 +213,8 @@ class Core extends Module {
   // printf(p"t2: ${Hexadecimal(regfile(7))}\n")
   printf("------------\n")
 
-  io.exit := (pc_reg === 0x4c.U(WORD_LEN.W))
+  // this is for test
+  // io.exit := (pc_reg === 0x4c.U(WORD_LEN.W))
+
+  io.exit := (inst === UNIMP)
 }

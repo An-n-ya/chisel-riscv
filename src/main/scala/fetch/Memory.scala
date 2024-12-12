@@ -24,9 +24,13 @@ class Memory extends Module {
 
   val mem = Mem(16384, UInt(8.W))
 
+  // loadMemoryFromFileInline(
+  //   mem,
+  //   "/home/annya/src/riscv-tests/target/share/riscv-tests/isa/hex/rv32mi-p-sw.hex"
+  // )
   loadMemoryFromFileInline(
     mem,
-    "/home/annya/src/riscv-tests/target/share/riscv-tests/isa/hex/rv32mi-p-sw.hex"
+    "/home/annya/playground/chisel-learn/chisel-riscv/src/c/ctest.hex"
   )
 
   io.imem.inst := Cat(
